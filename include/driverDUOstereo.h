@@ -5,7 +5,7 @@
 //	File:	driverDUOstereo.cpp
 //
 ////////////////////////////////////////////////////////////////////
- 
+
 #ifndef DUOCamera_StereoDriver_h
 #define DUOCamera_StereoDriver_h
 
@@ -55,23 +55,23 @@ public:
 
 	/*
 	 * 	@brief
-	 * 	This outside DUO API function ONLY, can access this DUOStereoDriver class 
-	 * 	private members since it is listed as a friend to this class. 
-	 * 	Be careful when using this. 
+	 * 	This outside DUO API function ONLY, can access this DUOStereoDriver class
+	 * 	private members since it is listed as a friend to this class.
+	 * 	Be careful when using this.
 	 */
 	friend void CALLBACK DUOCallback(const PDUOFrame pFrameData, void *pUserData);
 
 	/*
 	 *	@brief
 	 *	Singleton Implementation to allow for only a single instance of this
-	 *	class. 
+	 *	class.
 	 *	-If GetInstance() is called more then once, it will return a pointer
 	 *	 to a already initialize (non-NULL) pSingleton object.
 	 *	-If GetInstance() is called for the first time, initialize the pSingleton
-	 *	 variable to a new DUOStereoDriver object.  
+	 *	 variable to a new DUOStereoDriver object.
 	 *
 	 *	@return
-	 *	A pointer to the pSingleton private member object. 
+	 *	A pointer to the pSingleton private member object.
 	 */
 	static DUOStereoDriver&	GetInstance(void)
 	{
@@ -83,8 +83,8 @@ public:
 
 	/*
 	 *	@brief
-	 *	Check if pSingleton object is not null, and if it is not null, call the 
-	 *	shutdownDUO() function FIRST, and then delete the pSingleton object.	
+	 *	Check if pSingleton object is not null, and if it is not null, call the
+	 *	shutdownDUO() function FIRST, and then delete the pSingleton object.
 	 *
 	 */
 	static void	DestroyInstance(void)
@@ -105,8 +105,8 @@ public:
 	 *						with OpenDUO() DUO API function call.
 	 *	startDUO():			Simply calls the DUO API StartDUO() function call.
 	 *	shutdownDUO():		Using the DUO API function calls to properly end connection
- 	 * 						with DUO camera. This should ONLY be called, if the ros node 
- 	 * 						receives a shutdown signal; so this is called in the 
+ 	 * 						with DUO camera. This should ONLY be called, if the ros node
+ 	 * 						receives a shutdown signal; so this is called in the
  	 * 						DestroyInstance() if the pSingleton instance is not NULL.
 	 */
 	bool initializeDUO(void);
@@ -121,7 +121,7 @@ public:
 	/*
 	 *	@brief
 	 *	Used in the DUOCallback function for determine which image array index
-	 *	to store the respective data in. 
+	 *	to store the respective data in.
 	 */
 	static const int TWO_CAMERAS	= 2;
 	static const int LEFT_CAM 		= 0;
@@ -133,14 +133,14 @@ private:
 	 *	@brief
 	 *	Constructor and Destructor are made private so that you can only get one instance
 	 *	of this class through the GetInstance() function call, after this DUOStereoDriver
-	 *	constructor is called for the first time. 
+	 *	constructor is called for the first time.
 	 */
 	DUOStereoDriver(void);
 	~DUOStereoDriver(void);
 
 	/*
 	 * 	@brief
-	 * 	Used for setting proper camera namespaces 
+	 * 	Used for setting proper camera namespaces
 	 * 	(e.g. 'left/duo3d_camera/')
 	 * 	(e.g. 'right/duo3d_camera/')
 	 */
@@ -213,11 +213,11 @@ private:
 	int 	resHeight;
 
 	/*
-	* 	@brief 
+	* 	@brief
 	*	Fills the ros image msg's with the DUO frame buffer data
 	*/
-	void fillDUOImages(		sensor_msgs::Image& leftImage, 
-							sensor_msgs::Image& rightImage, 
+	void fillDUOImages(		sensor_msgs::Image& leftImage,
+							sensor_msgs::Image& rightImage,
 							const PDUOFrame pFrameData);
 
 	void fillIMUData(sensor_msgs::Imu& imuData, std_msgs::Float32& tempData, const PDUOFrame pFrameData);
@@ -240,6 +240,7 @@ private:
 	bool setCameraInfo();
 
 	Mat3f getDepthData(const PDUOFrame pFrameData, Mat1f disparity);
+
 
 	/*
 	 * 	@brief
@@ -267,14 +268,14 @@ private:
 
 	Vec3b HSV2RGB(float hue, float sat, float val);
 
-	/* 
+	/*
 	 * 	@brief
 	 * 	Check if the camera info matches the duo camera settings. If the camera settings
-	 * 	change, then a warning will pop up saying you must recalibrate the stereo camera. 
+	 * 	change, then a warning will pop up saying you must recalibrate the stereo camera.
 	 */
-	bool _calibrationMatches[TWO_CAMERAS];	 
+	bool _calibrationMatches[TWO_CAMERAS];
 
-	// 	Create transform broadcaster to transform image into the camera mount frame? 
+	// 	Create transform broadcaster to transform image into the camera mount frame?
 	// 	Since the z axis is pointing into the image, but in the world z axis is up
 
 	dynamic_reconfigure::Server<duo3d_ros::DuoConfig> 				_dynamicServer;

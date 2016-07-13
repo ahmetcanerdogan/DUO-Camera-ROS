@@ -18,7 +18,7 @@ find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 
 # Add DUO include and lib
-set(DUO_SDK /home/ahmetcan/CL-DUO3D-LIN-1.0.60.10/DUOSDK/SDK)
+set(DUO_SDK /home/lbarnett/development/CL-DUO3D-LIN-1.0.35.226/DUOSDK/SDK)
 include_directories(${DUO_SDK}/include ${PCL_INCLUDE_DIRS})
 
 # Detect Compiler / Arch and add libraries
@@ -53,7 +53,6 @@ elseif(UNIX)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 endif()
 
-#add dynamic reconfigure api
 generate_dynamic_reconfigure_options(
   cfg/Duo.cfg
 )
@@ -84,8 +83,8 @@ if(WIN32)
 #        target_link_libraries(duodense3d_node DUOlib)
 elseif(UNIX OR APPLE)
 	target_link_libraries(duo_node DUO Dense3D)
-        target_link_libraries(dense3d DUO Dense3D)
-#        target_link_libraries(duodense3d_node DUO Dense3D)
+        target_link_libraries(dense3d DUO Dense3D)        
+#        target_link_libraries(duodense3d_node DUO Dense3D)        
 endif()
 
 #############

@@ -62,6 +62,7 @@ bool DUOStereoDriver::useDepthData()
 }
 
 
+
 void DUOStereoDriver::fillDUOImages(sensor_msgs::Image& leftImage, sensor_msgs::Image& rightImage, const PDUOFrame pFrameData)
 {
 
@@ -76,9 +77,9 @@ void DUOStereoDriver::fillDUOImages(sensor_msgs::Image& leftImage, sensor_msgs::
 	//
 	sensor_msgs::fillImage(	leftImage, 								// image reference
 							sensor_msgs::image_encodings::MONO8, 	// type of encoding
-							pFrameData->height, 					// columns in pixels 
+							pFrameData->height, 					// columns in pixels
 							pFrameData->width,						// rows in pixels
-							pFrameData->width,						// step size 
+							pFrameData->width,						// step size
 							pFrameData->leftData);					// left camera data pointer
 
     sensor_msgs::fillImage( rightImage,
@@ -92,22 +93,18 @@ void DUOStereoDriver::fillDUOImages(sensor_msgs::Image& leftImage, sensor_msgs::
 void DUOStereoDriver::fillIMUData(sensor_msgs::Imu& imuData, std_msgs::Float32& tempData,  const PDUOFrame pFrameData)
 {
 
-	imuData.header.stamp = ros::Time( double(pFrameData->timeStamp) * 1.e-4);
+	imuData.header.stamp = ros::Time( double(pFrameData->IMUData[0].timeStamp) * 1.e-4);
 	imuData.header.frame_id = _camera_frame;
 
-	imuData.orientation.x = pFrameData->magData[0];
-	imuData.orientation.y = pFrameData->magData[1];
-	imuData.orientation.z = pFrameData->magData[2];
+	imuData.angular_velocity.x = pFrameData->IMUData[0].gyroData[0];
+	imuData.angular_velocity.y = pFrameData->IMUData[0].gyroData[1];
+	imuData.angular_velocity.z = pFrameData->IMUData[0].gyroData[2];
 
-	imuData.angular_velocity.x = pFrameData->gyroData[0];
-	imuData.angular_velocity.y = pFrameData->gyroData[1];
-	imuData.angular_velocity.z = pFrameData->gyroData[2];
+	imuData.linear_acceleration.x = pFrameData->IMUData[0].accelData[0];
+	imuData.linear_acceleration.y = pFrameData->IMUData[0].accelData[1];
+	imuData.linear_acceleration.z = pFrameData->IMUData[0].accelData[2];
 
-	imuData.linear_acceleration.x = pFrameData->accelData[0];
-	imuData.linear_acceleration.y = pFrameData->accelData[1];
-	imuData.linear_acceleration.z = pFrameData->accelData[2];
-
-	tempData.data = pFrameData->tempData;
+	tempData.data = pFrameData->IMUData[0].tempData;
 }
 
 void DUOStereoDriver::fillDepthData(Mat3f depthMat, Mat1f dispMat, sensor_msgs::PointCloud2Ptr depthData, const PDUOFrame pFrameData)
@@ -197,7 +194,7 @@ void DUOStereoDriver::publishImages(const sensor_msgs::ImagePtr image[TWO_CAMERA
           		ci(new sensor_msgs::CameraInfo(_cinfo[i]->getCameraInfo()));
 
         // If camera info and image width and height dont match
-        // then set calibration_matches to false so we then 
+        // then set calibration_matches to false so we then
         // know if we should reset the camera info or not
         ci->header.frame_id = image[i]->header.frame_id;
         ci->header.stamp 	= image[i]->header.stamp;
@@ -213,17 +210,17 @@ void DUOStereoDriver::publishImages(const sensor_msgs::ImagePtr image[TWO_CAMERA
 void CALLBACK DUOCallback(const PDUOFrame pFrameData, void *pUserData)
 {
 
-	// Using singleton to access DUOStereoDriver 
+	// Using singleton to access DUOStereoDriver
 	// class member functions in this DUO C function
-	DUOStereoDriver& 		duoDriver 	= DUOStereoDriver::GetInstance(); 	
+	DUOStereoDriver& 		duoDriver 	= DUOStereoDriver::GetInstance();
 
 	// Array to store left and right images
-	sensor_msgs::ImagePtr 	image[duoDriver.TWO_CAMERAS];	
+	sensor_msgs::ImagePtr 	image[duoDriver.TWO_CAMERAS];
 
 	// Initialize array of image pointers
     for (int i = 0; i < duoDriver.TWO_CAMERAS; i++)
     {
-    	image[i] = sensor_msgs::ImagePtr(new sensor_msgs::Image);    	
+    	image[i] = sensor_msgs::ImagePtr(new sensor_msgs::Image);
     }
 
     // Dereferencing individual images to fill with pFrameData from camera
@@ -254,6 +251,8 @@ void CALLBACK DUOCallback(const PDUOFrame pFrameData, void *pUserData)
     duoDriver.publishImages(image);
 
 }
+
+
 
 Mat3f DUOStereoDriver::getDepthData(const PDUOFrame pFrameData, Mat1f disparity) {
 	Mat3f depth3d = Mat(Size(resWidth, resHeight), CV_32FC3);
@@ -303,7 +302,7 @@ bool DUOStereoDriver::initializeDUO()
 	std::string 	deviceName;
 	if(_priv_nh.getParam("device_name", deviceName))
 	{
-		ROS_INFO_STREAM("DUO Device: " << deviceName); 
+		ROS_INFO_STREAM("DUO Device: " << deviceName);
 	}
 	else
 	{
@@ -339,17 +338,17 @@ bool DUOStereoDriver::initializeDUO()
 
 
 	/*
-	 * @brief 
+	 * @brief
 	 * @note
-	 * NodeHandle param function does not use <Float> for input source (framesPerSecond) 
-	 * so we have to pass as double, and then cast to float to satisfy DUOResolutionInfo 
+	 * NodeHandle param function does not use <Float> for input source (framesPerSecond)
+	 * so we have to pass as double, and then cast to float to satisfy DUOResolutionInfo
 	 * fps parameter requirement of type float
 	 */
 	double	framesPerSecond;
 	_priv_nh.param("FPS", framesPerSecond, 30.0);
 
 
-	/* 
+	/*
 	 * Grab the resolution width and height, for temporary resolution enumeration
 	 */
 	_priv_nh.param("resolution_width", 	resWidth, 752);
@@ -359,11 +358,11 @@ bool DUOStereoDriver::initializeDUO()
 	// Find optimal binning parameters for given (width, height)
     // This maximizes sensor imaging area for given resolution
     int binning = DUO_BIN_NONE;
-    if(resWidth <= 752/2) 
+    if(resWidth <= 752/2)
         binning += DUO_BIN_HORIZONTAL2;
-    if(resHeight <= 480/4) 
+    if(resHeight <= 480/4)
         binning += DUO_BIN_VERTICAL4;
-    else if(resHeight <= 480/2) 
+    else if(resHeight <= 480/2)
         binning += DUO_BIN_VERTICAL2;
 
 	/*
@@ -371,10 +370,10 @@ bool DUOStereoDriver::initializeDUO()
 	 * Grab bool for whether user wants to use IMU &/or LED's
 	 *
 	 * @TODO
-	 * Change this to local variable within this initializeDUO() 
+	 * Change this to local variable within this initializeDUO()
 	 * function and tell the DUO that we want the imu data as well.
 	 * If it already being sent without even trying to turn it on,
-	 * figure out how it can be turned off so that we use less 
+	 * figure out how it can be turned off so that we use less
 	 * resources.
 	 */
 	_priv_nh.param<bool>("use_DUO_imu",  _useDUO_Imu,  false);
@@ -407,7 +406,7 @@ bool DUOStereoDriver::initializeDUO()
 	if(EnumerateResolutions(&_duoResolutionInfo, 1, resWidth, resHeight, binning, framesPerSecond))
 	{
 		ROS_INFO("Resolution Parameters Check: PASSED");
-		
+
 		if(OpenDUO(&_duoInstance))
 		{
 			GetDUODeviceName(		_duoInstance, _duoDeviceName);
@@ -421,7 +420,7 @@ bool DUOStereoDriver::initializeDUO()
 			_priv_nh.param("gain"			, _duoGain 		, 50.0);
 			_priv_nh.param("led_lighting"	, _duoLEDLevel	, 50.0);
 
-			// These need to be roslaunch parameters. Will make dynamic reconfig 
+			// These need to be roslaunch parameters. Will make dynamic reconfig
 			SetDUOExposure(_duoInstance, _duoExposure);
 			SetDUOGain(_duoInstance, _duoGain);
 			SetDUOLedPWM(_duoInstance, _duoLEDLevel);
@@ -510,9 +509,20 @@ bool DUOStereoDriver::initializeDense3D() {
 		ROS_ERROR("Could not get set Dense3D image size\n");
 		return false;
 	}
-
 	// Set Dense3D parameters
-	SetDense3DCalibration(_dense3dInstance, &_duoIntrinsics, &_duoExtrinsics);
+	DUO_STEREO params;
+	if(!	GetDUOStereoParameters(_duoInstance, &params))
+
+	{ROS_ERROR("Could not get DUO camera calibration data");
+        // Close DUO camera
+        shutdownDUO();
+        // Close Dense3D library
+        shutdownDense3D();
+        return -1;
+    }
+	// Set Dense3D parameters
+	SetDense3DCalibration(_dense3dInstance, &params);
+
 
 	return true;
 }
@@ -520,10 +530,10 @@ bool DUOStereoDriver::initializeDense3D() {
 // this callback function is called whenever the dynamic_reconfigure server (this node)
 // recieves any new parameters to change. It basically changes the variables in this node
 // based on the dynamic_reconfigure parameters it recieves.
-void DUOStereoDriver::dynamicCallback(duo3d_ros::DuoConfig &config, uint32_t level) 
+void DUOStereoDriver::dynamicCallback(duo3d_ros::DuoConfig &config, uint32_t level)
 {
-  	//ROS_INFO("Reconfigure Request: %f %f %f", 
-    //        	config.exposure, config.gain, 
+  	//ROS_INFO("Reconfigure Request: %f %f %f",
+    //        	config.exposure, config.gain,
     //        	config.LED);
 
   	// if any parameters have changed, then let the DUO camera know and change them
@@ -606,7 +616,7 @@ void DUOStereoDriver::setup(void)
 void DUOStereoDriver::startDUO()
 {
 	// If we could successfully open the DUO, then lets start it to finish
-	// the initialization 
+	// the initialization
 	ROS_INFO("Starting DUO...");
 	StartDUO(_duoInstance, DUOCallback, NULL);
 	ROS_INFO("DUO Started.");
